@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <typeinfo>
+#include <stdlib.h>
 
 const unsigned int FONTSET_SIZE = 80;
 const unsigned int FONTSET_START_ADDRESS = 0x50;
@@ -262,9 +263,11 @@ void Chip8::OP_00E0(){
 	drawFlag = true;
 }
 
-
+// Return from a subroutine.
 void Chip8::OP_00EE(){
-	
+	--stackPointer;
+	programCounter = stack[stackPointer];
+
 }
 
 // Jump to location nnn.
@@ -272,77 +275,166 @@ void Chip8::OP_1nnn(){
 	programCounter = get_nnn(opcode);
 }
 
-
+// Call subroutine at nnn.
 void Chip8::OP_2nnn(){
-
+	stack[stackPointer] = programCounter;
+	stackPointer++;
+	programCounter = get_nnn(opcode);
 }
 
-
+// Skip next instruction if Vx = kk.
 void Chip8::OP_3xkk(){
-
+	uint8_t x = get_x(opcode);
+	uint8_t kk = get_kk(opcode);
+	if (registers[x] == kk) {
+		programCounter += 2;
+	}
 }
 
+// Skip next instruction if Vx != kk.
 void Chip8::OP_4xkk(){
-
+	uint8_t x = get_x(opcode);
+	uint8_t kk = get_kk(opcode);
+	if (registers[x] != kk) {
+		programCounter += 2;
+	}
 }
 
+// Skip next instruction if Vx = Vy.
 void Chip8::OP_5xy0(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	if (registers[x] == registers[y]) {
+		programCounter += 2;
+	}
 }
 
-// 6xkk - LD Vx, byte
+// Set Vx = kk.
 void Chip8::OP_6xkk(){
 	uint8_t x = get_x(opcode);
 	uint8_t kk = get_kk(opcode);
 	registers[x] = kk;
 }
 
-// 7xkk - ADD Vx, byte
+// Set Vx = Vx + kk.
 void Chip8::OP_7xkk(){
 	uint8_t x = get_x(opcode);
 	uint8_t kk = get_kk(opcode);
 	registers[x] += kk;
 }
 
-
+// Set Vx = Vy.
 void Chip8::OP_8xy0(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	registers[x] = registers[y];
 }
 
+// Set Vx = Vx OR Vy.
 void Chip8::OP_8xy1(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	registers[x] |= registers[y];
 }
 
+// Set Vx = Vx AND Vy.
 void Chip8::OP_8xy2(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	registers[x] &= registers[y];
 }
 
+// Set Vx = Vx XOR Vy.
 void Chip8::OP_8xy3(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	registers[x] ^= registers[y];
 }
 
+// Set Vx = Vx + Vy, set VF = carry.
 void Chip8::OP_8xy4(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	uint16_t sum = (uint16_t)registers[x] + (uint16_t)registers[y];
+
+	if (sum > UINT8_MAX)
+		registers[0xF] = 1;
+
+	registers[x] += registers[y];
 }
 
+// Set Vx = Vx - Vy, set VF = NOT borrow.
 void Chip8::OP_8xy5(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	if (registers[x] > registers[y]) {
+		registers[0xF] = 1;
+	}
+	else {
+		registers[0xF] = 0;
+	}
+
+	registers[x] -= registers[y];
 }
 
+// Set Vx = Vx SHR 1.
 void Chip8::OP_8xy6(){
+	uint8_t x = get_x(opcode);
 
+	if ((registers[x] & 0x01) == 1){
+		registers[0xF] = 1;
+	}
+	else {
+		registers[0xF] = 0;
+	}
+
+	registers[x] >>= 1;
 }
 
+// Set Vx = Vy - Vx, set VF = NOT borrow.
 void Chip8::OP_8xy7(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	if (registers[y] > registers[x]) {
+		registers[0xF] = 1;
+	}
+	else {
+		registers[0xF] = 0;
+	}
+
+	registers[x] = registers[y] - registers[x];
 }
 
+// Set Vx = Vx SHL 1.
 void Chip8::OP_8xyE(){
+	uint8_t x = get_x(opcode);
 
+	if (((registers[x] & 0x80) >> 8) == 1) {
+		registers[0xF] = 1;
+	}
+	else {
+		registers[0xF] = 0;
+	}
+
+	registers[x] <<= 1;
 }
 
+// Skip next instruction if Vx != Vy.
 void Chip8::OP_9xy0(){
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
 
+	if (registers[x] != registers[y]) {
+		programCounter += 2;
+	}
 }
 
 // Set I = nnn.
@@ -350,12 +442,18 @@ void Chip8::OP_Annn(){
 	indexReg = get_nnn(opcode);
 }
 
+// Jump to location nnn + V0.
 void Chip8::OP_Bnnn(){
-
+	programCounter = get_nnn(opcode) + registers[0];
 }
 
+// Set Vx = random byte AND kk.
 void Chip8::OP_Cxkk(){
+	uint8_t rng = rand() % 255;
+	uint8_t x = get_x(opcode);
+	uint8_t kk = get_kk(opcode);
 
+	registers[x] = rng & kk;
 }
 
 // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
