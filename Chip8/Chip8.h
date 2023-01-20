@@ -6,7 +6,7 @@
 #include <fstream>
 
 class Chip8 {
-public:
+private:
 	uint8_t memory[4096];
 	uint8_t registers[16];
 	uint16_t indexReg;
@@ -15,21 +15,22 @@ public:
 	uint8_t stackPointer;
 	uint8_t delayTimer;
 	uint8_t soundTimer;
-	uint32_t display[64];
+	uint32_t display[64*32];
 	uint8_t keypad[16];
 	uint16_t opcode;
-	
+
+
 	uint16_t get_nnn(uint16_t opcode);
-	uint16_t get_msb_n(uint16_t opcode);
-	uint16_t get_x(uint16_t opcode);
-	uint16_t get_y(uint16_t opcode);
-	uint16_t get_kk(uint16_t opcode);
+	uint8_t get_msb_n(uint16_t opcode);
+	uint8_t get_lsb_n(uint16_t opcode);
+	uint8_t get_x(uint16_t opcode);
+	uint8_t get_y(uint16_t opcode);
+	uint8_t get_kk(uint16_t opcode);
+
+
 
 	void allMemory();
-	Chip8();
-	void LoadROM(char const* filename);
-	bool load_rom(std::string rom_path);
-	void Cycle();
+
 	void OP_00E0();
 	void OP_00EE();
 	void OP_1nnn();
@@ -50,7 +51,7 @@ public:
 	void OP_8xyE();
 	void OP_9xy0();
 	void OP_Annn();
-	void OP_8nnn();
+	void OP_Bnnn();
 	void OP_Cxkk();
 	void OP_Dxyn();
 	void OP_Ex9E();
@@ -64,5 +65,10 @@ public:
 	void OP_Fx33();
 	void OP_Fx55();
 	void OP_Fx65();
-
+public:
+	Chip8();
+	void LoadROM(char const* filename);
+	void Cycle();
+	bool drawFlag;
+	void printDisplay();
 };

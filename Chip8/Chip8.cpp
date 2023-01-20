@@ -6,8 +6,9 @@
 #include <iostream>
 #include <typeinfo>
 
-
-uint8_t font[80] = {
+const unsigned int FONTSET_SIZE = 80;
+const unsigned int FONTSET_START_ADDRESS = 0x50;
+uint8_t fontset[FONTSET_SIZE] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0x70, // 1
 	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -28,38 +29,45 @@ uint8_t font[80] = {
 
 Chip8::Chip8() {
 	programCounter = 0x200;
+	opcode = 0;
+	indexReg = 0;
+	stackPointer = 0;
+
+	// Clear display
+	for (int i = 0; i < 2048; i++) {
+		display[i] = 0;
+	}
+
+	// Clear stack
+	for (int i = 0; i < 16; ++i)
+		stack[i] = 0;
+
+	// Clear registers
+	for (int i = 0; i < 16; ++i)
+		registers[i] = 0;
+
+	// Clear keypad
+	for (int i = 0; i < 16; ++i)
+		keypad[i] = 0;
+
+	// Clear memory
+	for (int i = 0; i < 4096; ++i)
+		memory[i] = 0;
+
+	// Load fontset
+	for (int i = 0; i < FONTSET_SIZE; ++i) {
+		memory[FONTSET_START_ADDRESS + i] = fontset[i];
+	}
+
+	// Reset timers
+	delayTimer = 0;
+	soundTimer = 0;
+
+	// Clear screen once
+	drawFlag = true;
 }
 
 const unsigned int START_ADDRESS = 0x200;
-
-void u_char_to_bin(unsigned char letter) {
-	int binary[8];
-	for (int n = 0; n < 8; n++)
-		binary[7 - n] = (letter >> n) & 1;
-	/* print result */
-	for (int n = 0; n < 8; n++)
-		printf("%d", binary[n]);
-	printf("\n");
-}
-
-void decToBinary(int n) {
-	// array to store binary number
-	int binaryNum[32];
-
-	// counter for binary array
-	int i = 0;
-	while (n > 0) {
-
-		// storing remainder in binary array
-		binaryNum[i] = n % 2;
-		n = n / 2;
-		i++;
-	}
-
-	// printing binary array in reverse order
-	for (int j = i - 1; j >= 0; j--)
-		std::cout << binaryNum[j];
-}
 
 void Chip8::LoadROM(char const* filename) {
 	// Open the file as a stream of binary and move the file pointer to the end
@@ -76,19 +84,9 @@ void Chip8::LoadROM(char const* filename) {
 		file.close();
 
 		// Load the ROM contents into the Chip8's memory, starting at 0x200
-		for (long i = 0; i < size; ++i) {
-			//std::cout << i << " ";
-			
-			memory[START_ADDRESS + i] = buffer[i];
-
-			//std::cout << memory[START_ADDRESS + i] << std::endl;
-			//std::cout << START_ADDRESS + i << " : ";
-			//u_char_to_bin(memory[START_ADDRESS + i]);
-			
+		for (long i = 0; i < size; ++i) {			
+			memory[START_ADDRESS + i] = buffer[i];		
 		}
-
-		// std::cout << typeid(memory[START_ADDRESS + 1]).name() << std::endl;
-		//u_char_to_bin(memory[START_ADDRESS + 1]);
 
 		// Free the buffer
 		delete[] buffer;
@@ -100,12 +98,8 @@ void Chip8::LoadROM(char const* filename) {
 
 void Chip8::Cycle() {
 	// Fetch
-	opcode = (memory[programCounter] << 8u) | memory[programCounter + 1];
+	opcode = (memory[programCounter] << 8) | memory[programCounter + 1];
 
-	//std::cout << programCounter << " " << std::hex << opcode << std::dec << std::endl;
-	//decToBinary(opcode);
-	//std::cout << "\n";
-	// Increment the PC before we execute anything
 	programCounter += 2;
 
 	// Decrement the delay timer if it's been set
@@ -117,90 +111,172 @@ void Chip8::Cycle() {
 	if (soundTimer > 0) {
 		--soundTimer;
 	}
+
+
 	uint16_t msb = get_msb_n(opcode);
 
 	switch (msb) {
-	case 0x0:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	case 0x0: {
+		uint16_t lsb = get_kk(opcode);
+
+		switch (lsb) {
+		case 0xE0:
+			OP_00E0();
+			break;
+		case 0xEE:
+			OP_00EE();
+			break;
+		}
 		break;
+	}
 	case 0x1:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_1nnn();
 		break;
 	case 0x2:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_2nnn();
 		break;
 	case 0x3:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_3xkk();
 		break;
 	case 0x4:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_4xkk();
 		break;
 	case 0x5:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_5xy0();
 		break;
-	case 0x6:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	case 0x6: {
+		OP_6xkk();
 		break;
-	case 0x7:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	}
+	case 0x7: {
+		OP_7xkk();
 		break;
-	case 0x8:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	}
+	case 0x8: {
+		uint16_t n = get_lsb_n(opcode);
+
+		switch (n) {
+		case 0x0:
+			OP_8xy0();
+			break;
+		case 0x1:
+			OP_8xy1();
+			break;
+		case 0x2:
+			OP_8xy2();
+			break;
+		case 0x3:
+			OP_8xy3();
+			break;
+		case 0x4:
+			OP_8xy4();
+			break;
+		case 0x5:
+			OP_8xy5();
+			break;
+		case 0x6:
+			OP_8xy6();
+			break;
+		case 0x7:
+			OP_8xy7();
+			break;
+		case 0xE:
+			OP_8xyE();
+			break;
+		}
+		
 		break;
+	}
 	case 0x9:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_9xy0();
 		break;
 	case 0xA:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_Annn();
 		break;
 	case 0xB:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_Bnnn();
 		break;
 	case 0xC:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		OP_Cxkk();
 		break;
-	case 0xD:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	case 0xD: {
+		OP_Dxyn();
 		break;
-	case 0xE:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	}
+	case 0xE: {
+		uint16_t lsb = get_kk(opcode);
+
+		switch (lsb) {
+		case 0x9E:
+			OP_Ex9E();
+			break;
+		case 0xA1:
+			OP_ExA1();
+			break;
+		}
 		break;
-	case 0xF:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	}
+	case 0xF: {
+		uint16_t lsb = get_kk(opcode);
+
+		switch (lsb) {
+		case 0x07:
+			OP_Fx07();
+			break;
+		case 0xA1:
+			OP_Fx0A();
+			break;
+		case 0x15:
+			OP_Fx15();
+			break;
+		case 0x18:
+			OP_Fx18();
+			break;
+		case 0x1E:
+			OP_Fx1E();
+			break;
+		case 0x29:
+			OP_Fx29();
+			break;
+		case 0x33:
+			OP_Fx33();
+			break;
+		case 0x55:
+			OP_Fx55();
+			break;
+		case 0x65:
+			OP_Fx65();
+			break;
+		}
 		break;
+	}
 	default:
-		std::cout << "0x0 " << std::hex << opcode << std::endl;
-	}
-	//std::cout << std::hex << get_msb_n(opcode) << " " << get_nnn(opcode) << std::dec << std::endl;
-	//std::cout << programCounter << " " << std::hex << opcode << " " << get_msb_n(opcode) << std::dec << std::endl;
-	std::cout << (programCounter-2) << " " << std::hex << opcode << " " << msb << std::dec << std::endl;
-
-	// Decode and Execute
-	//((*this).*(table[(opcode & 0xF000u) >> 12u]))();
-	//std::cout << programCounter << " " << opcode << std::endl;
-}
-
-void Chip8::allMemory() {
-	for (int i = 0; i < 4096; i++) {
-		std::cout << i << " " << memory[i] << std::endl;
+		std::cout << "unrecognized opcode";
 	}
 }
 
+// Clear the display.
 void Chip8::OP_00E0(){
-
+	for (int i = 0; i < 2048; ++i)
+		display[i] = 0;
+	drawFlag = true;
 }
+
 
 void Chip8::OP_00EE(){
-
+	
 }
 
+// Jump to location nnn.
 void Chip8::OP_1nnn(){
-
+	programCounter = get_nnn(opcode);
 }
+
 
 void Chip8::OP_2nnn(){
 
 }
+
 
 void Chip8::OP_3xkk(){
 
@@ -214,13 +290,20 @@ void Chip8::OP_5xy0(){
 
 }
 
+// 6xkk - LD Vx, byte
 void Chip8::OP_6xkk(){
-
+	uint8_t x = get_x(opcode);
+	uint8_t kk = get_kk(opcode);
+	registers[x] = kk;
 }
 
+// 7xkk - ADD Vx, byte
 void Chip8::OP_7xkk(){
-
+	uint8_t x = get_x(opcode);
+	uint8_t kk = get_kk(opcode);
+	registers[x] += kk;
 }
+
 
 void Chip8::OP_8xy0(){
 
@@ -262,11 +345,12 @@ void Chip8::OP_9xy0(){
 
 }
 
+// Set I = nnn.
 void Chip8::OP_Annn(){
-
+	indexReg = get_nnn(opcode);
 }
 
-void Chip8::OP_8nnn(){
+void Chip8::OP_Bnnn(){
 
 }
 
@@ -274,8 +358,41 @@ void Chip8::OP_Cxkk(){
 
 }
 
-void Chip8::OP_Dxyn(){
+// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+void Chip8::OP_Dxyn() {
+	uint8_t x = get_x(opcode);
+	uint8_t y = get_y(opcode);
+	uint8_t num_bytes = get_lsb_n(opcode);
 
+	uint8_t xPos = registers[x] % 64;
+	uint8_t yPos = registers[y] % 32;
+	registers[0xF] = 0;
+
+	for (int row = 0; row < num_bytes; row++) {
+		uint8_t byte = memory[indexReg + row];
+
+		for (int col = 0; col < 8; col++) {
+			uint8_t bit = byte & (0x80 >> col);
+			uint16_t position = ((yPos + row) * 64) + (xPos + col);
+			uint32_t* displayPixel = &display[position];
+
+			// check if sprite bit is 1
+			if (bit) {
+				if (*displayPixel) {
+					registers[0xF] = 1; // collision
+					*displayPixel = 0;
+				}
+				else {
+					*displayPixel = 1;
+				}
+
+				/**displayPixel ^= 1;*/
+			}
+		}
+	}
+
+	drawFlag = true;
+	//printDisplay();
 }
 
 void Chip8::OP_Ex9E(){
@@ -323,25 +440,56 @@ void Chip8::OP_Fx65(){
 }
 
 
-
-
 uint16_t Chip8::get_nnn(uint16_t opcode) {
-	return (opcode & 0x0FFF);
+	return (opcode & 0x0FFFu);
 }
 
-uint16_t Chip8::get_msb_n(uint16_t opcode) {
-	return ((opcode & 0xF000) >> 12);
-	//return (opcode >> 12);
+uint8_t Chip8::get_msb_n(uint16_t opcode) {
+	return (uint8_t)((opcode & 0xF000u) >> 12);
 }
 
-uint16_t Chip8::get_x(uint16_t opcode) {
-	return ((opcode & 0x0F00) >> 8);
+uint8_t Chip8::get_lsb_n(uint16_t opcode) {
+	return (uint8_t)((opcode & 0x000Fu));
 }
 
-uint16_t Chip8::get_y(uint16_t opcode) {
-	return ((opcode & 0x00F0) >> 4);
+uint8_t Chip8::get_x(uint16_t opcode) {
+	return (uint8_t)((opcode & 0x0F00u) >> 8);
 }
 
-uint16_t Chip8::get_kk(uint16_t opcode) {
-	return (opcode & 0x00FF);
+uint8_t Chip8::get_y(uint16_t opcode) {
+	return (uint8_t)((opcode & 0x00F0u) >> 4);
 }
+
+uint8_t Chip8::get_kk(uint16_t opcode) {
+	return (uint8_t)(opcode & 0x00FFu);
+}
+
+
+void Chip8::printDisplay() {
+	for (int i = 0; i < 66; i++)
+		std::cout << (char)254u;
+	
+	std::cout << std::endl;
+	for (int row = 0; row < 32; row++) {
+		std::cout << (char)254u;
+		for (int col = 0; col < 64; col++) {
+			uint16_t pos = (row * 64) + col;
+			uint32_t pixel = display[pos];
+			char out;
+
+			out = (pixel != 0) ? (char)254u : ' ';
+
+			std::cout << out;
+
+		}
+		std::cout << (char)254u << std::endl;
+	}
+
+	for (int i = 0; i < 66; i++)
+		std::cout << (char)254u;
+	std::cout << std::endl;
+
+
+	drawFlag = false;
+}
+
