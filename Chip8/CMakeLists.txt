@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_executable (Chip8 "Chip8.cpp" "Chip8.h")
+add_executable (Chip8 "Chip8.cpp" "Chip8.h" "Main.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Chip8 PROPERTY CXX_STANDARD 20)

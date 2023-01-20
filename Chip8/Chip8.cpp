@@ -3,6 +3,8 @@
 
 #include "Chip8.h"
 #include <fstream>
+#include <iostream>
+#include <typeinfo>
 
 
 uint8_t font[80] = {
@@ -30,6 +32,16 @@ Chip8::Chip8() {
 
 const unsigned int START_ADDRESS = 0x200;
 
+void u_char_to_bin(unsigned char letter) {
+	int binary[8];
+	for (int n = 0; n < 8; n++)
+		binary[7 - n] = (letter >> n) & 1;
+	/* print result */
+	for (int n = 0; n < 8; n++)
+		printf("%d", binary[n]);
+	printf("\n");
+}
+
 void Chip8::LoadROM(char const* filename)
 {
 	// Open the file as a stream of binary and move the file pointer to the end
@@ -49,8 +61,16 @@ void Chip8::LoadROM(char const* filename)
 		// Load the ROM contents into the Chip8's memory, starting at 0x200
 		for (long i = 0; i < size; ++i)
 		{
+			
 			memory[START_ADDRESS + i] = buffer[i];
+			//std::cout << memory[START_ADDRESS + i] << std::endl;
+			std::cout << START_ADDRESS + i << " : ";
+			u_char_to_bin(memory[START_ADDRESS + i]);
+			
 		}
+
+		// std::cout << typeid(memory[START_ADDRESS + 1]).name() << std::endl;
+		//u_char_to_bin(memory[START_ADDRESS + 1]);
 
 		// Free the buffer
 		delete[] buffer;
