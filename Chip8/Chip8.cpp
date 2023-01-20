@@ -117,9 +117,63 @@ void Chip8::Cycle() {
 	if (soundTimer > 0) {
 		--soundTimer;
 	}
+	uint16_t msb = get_msb_n(opcode);
 
+	switch (msb) {
+	case 0x0:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x1:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x2:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x3:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x4:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x5:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x6:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x7:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x8:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0x9:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xA:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xB:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xC:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xD:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xE:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	case 0xF:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+		break;
+	default:
+		std::cout << "0x0 " << std::hex << opcode << std::endl;
+	}
 	//std::cout << std::hex << get_msb_n(opcode) << " " << get_nnn(opcode) << std::dec << std::endl;
-	std::cout << programCounter << " " << std::hex << opcode << " " << get_msb_n(opcode) << std::dec << std::endl;
+	//std::cout << programCounter << " " << std::hex << opcode << " " << get_msb_n(opcode) << std::dec << std::endl;
+	std::cout << (programCounter-2) << " " << std::hex << opcode << " " << msb << std::dec << std::endl;
 
 	// Decode and Execute
 	//((*this).*(table[(opcode & 0xF000u) >> 12u]))();
@@ -275,18 +329,19 @@ uint16_t Chip8::get_nnn(uint16_t opcode) {
 	return (opcode & 0x0FFF);
 }
 
-uint8_t Chip8::get_msb_n(uint16_t opcode) {
+uint16_t Chip8::get_msb_n(uint16_t opcode) {
 	return ((opcode & 0xF000) >> 12);
+	//return (opcode >> 12);
 }
 
-uint8_t Chip8::get_x(uint16_t opcode) {
+uint16_t Chip8::get_x(uint16_t opcode) {
 	return ((opcode & 0x0F00) >> 8);
 }
 
-uint8_t Chip8::get_y(uint16_t opcode) {
+uint16_t Chip8::get_y(uint16_t opcode) {
 	return ((opcode & 0x00F0) >> 4);
 }
 
-uint8_t Chip8::get_kk(uint16_t opcode) {
+uint16_t Chip8::get_kk(uint16_t opcode) {
 	return (opcode & 0x00FF);
 }

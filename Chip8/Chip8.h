@@ -20,10 +20,10 @@ public:
 	uint16_t opcode;
 	
 	uint16_t get_nnn(uint16_t opcode);
-	uint8_t get_msb_n(uint16_t opcode);
-	uint8_t get_x(uint16_t opcode);
-	uint8_t get_y(uint16_t opcode);
-	uint8_t get_kk(uint16_t opcode);
+	uint16_t get_msb_n(uint16_t opcode);
+	uint16_t get_x(uint16_t opcode);
+	uint16_t get_y(uint16_t opcode);
+	uint16_t get_kk(uint16_t opcode);
 
 	void allMemory();
 	Chip8();
