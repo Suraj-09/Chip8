@@ -1,16 +1,16 @@
-﻿// Chip8.cpp : Defines the entry point for the application.
-//
-
+﻿
 #include "Chip8.h"
 #include <fstream>
 #include <iostream>
 #include <typeinfo>
 #include <stdlib.h>
-//#include "user32.lib"
 #include <windows.h>
+#include <string>
 
 const unsigned int FONTSET_SIZE = 80;
 const unsigned int FONTSET_START_ADDRESS = 0x50;
+const unsigned int START_ADDRESS = 0x200;
+
 uint8_t fontset[FONTSET_SIZE] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -30,38 +30,45 @@ uint8_t fontset[FONTSET_SIZE] = {
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+uint8_t keycodes[KEYPAD_SIZE] = {
+	0x31, 0x32, 0x33, 0x34, // 1 2 3 4
+	0x51, 0x57, 0x45, 0x52, // Q W E R
+	0x41, 0x53, 0x44, 0x46, // A S D F
+	0x5A, 0x58, 0x43, 0x56, // Z X C V
+};
+
 Chip8::Chip8() {
-	programCounter = 0x200;
+	// initialize
+	programCounter = START_ADDRESS;
 	opcode = 0;
 	indexReg = 0;
 	stackPointer = 0;
 
-	// Clear display
-	for (int i = 0; i < 2048; i++) {
-		display[i] = 0;
-	}
-
-	// Clear stack
-	for (int i = 0; i < 16; ++i)
-		stack[i] = 0;
-
-	// Clear registers
-	for (int i = 0; i < 16; ++i)
-		registers[i] = 0;
-
-	// Clear keypad
-	for (int i = 0; i < 16; ++i)
-		keypad[i] = 0;
-
 	// Clear memory
-	for (int i = 0; i < 4096; ++i)
+	for (int i = 0; i < MEMORY_SIZE; ++i)
 		memory[i] = 0;
 
-	// Load fontset
-	for (int i = 0; i < FONTSET_SIZE; ++i) {
-		memory[FONTSET_START_ADDRESS + i] = fontset[i];
-	}
+	// Clear registers
+	for (int i = 0; i < NUM_REGISTER; ++i)
+		registers[i] = 0;
 
+	// Clear stack
+	for (int i = 0; i < STACK_LEVELS; ++i)
+		stack[i] = 0;
+
+	// Clear display
+	for (int i = 0; i < DISPLAY_SIZE; i++)
+		display[i] = 0;
+
+
+	// Clear keypad
+	for (int i = 0; i < KEYPAD_SIZE; ++i)
+		keypad[i] = 0;
+
+	// Load fontset
+	for (int i = 0; i < FONTSET_SIZE; ++i)
+		memory[FONTSET_START_ADDRESS + i] = fontset[i];
+	
 	// Reset timers
 	delayTimer = 0;
 	soundTimer = 0;
@@ -70,7 +77,6 @@ Chip8::Chip8() {
 	drawFlag = true;
 }
 
-const unsigned int START_ADDRESS = 0x200;
 
 void Chip8::LoadROM(char const* filename) {
 	// Open the file as a stream of binary and move the file pointer to the end
@@ -114,7 +120,6 @@ void Chip8::Cycle() {
 	if (soundTimer > 0) {
 		--soundTimer;
 	}
-
 
 	uint16_t msb = get_msb_n(opcode);
 
@@ -256,6 +261,8 @@ void Chip8::Cycle() {
 	default:
 		std::cout << "unrecognized opcode";
 	}
+
+	Sleep(1);
 }
 
 // Clear the display.
@@ -485,8 +492,6 @@ void Chip8::OP_Dxyn() {
 				else {
 					*displayPixel = 1;
 				}
-
-				/**displayPixel ^= 1;*/
 			}
 		}
 	}
@@ -519,55 +524,55 @@ void Chip8::OP_Fx07(){
 }
 
 void Chip8::OP_Fx0A(){
-	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t x = get_x(opcode);
 
 	if (keypad[0]) {
-		registers[Vx] = 0;
+		registers[x] = 0;
 	}
 	else if (keypad[1]) {
-		registers[Vx] = 1;
+		registers[x] = 1;
 	}
 	else if (keypad[2]) {
-		registers[Vx] = 2;
+		registers[x] = 2;
 	}
 	else if (keypad[3])	{
-		registers[Vx] = 3;
+		registers[x] = 3;
 	}
 	else if (keypad[4])	{
-		registers[Vx] = 4;
+		registers[x] = 4;
 	}
 	else if (keypad[5])	{
-		registers[Vx] = 5;
+		registers[x] = 5;
 	}
 	else if (keypad[6])	{
-		registers[Vx] = 6;
+		registers[x] = 6;
 	}
 	else if (keypad[7])	{
-		registers[Vx] = 7;
+		registers[x] = 7;
 	}
 	else if (keypad[8])	{
-		registers[Vx] = 8;
+		registers[x] = 8;
 	}
 	else if (keypad[9])	{
-		registers[Vx] = 9;
+		registers[x] = 9;
 	}
 	else if (keypad[10]) {
-		registers[Vx] = 10;
+		registers[x] = 10;
 	}
 	else if (keypad[11]) {
-		registers[Vx] = 11;
+		registers[x] = 11;
 	}
 	else if (keypad[12]) {
-		registers[Vx] = 12;
+		registers[x] = 12;
 	}
 	else if (keypad[13]) {
-		registers[Vx] = 13;
+		registers[x] = 13;
 	}
 	else if (keypad[14]) {
-		registers[Vx] = 14;
+		registers[x] = 14;
 	}
 	else if (keypad[15]) {
-		registers[Vx] = 15;
+		registers[x] = 15;
 	}
 	else {
 		programCounter -= 2;
@@ -597,50 +602,56 @@ void Chip8::OP_Fx29(){
 }
 
 void Chip8::OP_Fx33(){
+	uint8_t x = get_x(opcode);
 
+	memory[indexReg] = registers[x] / 100;
+	memory[indexReg + 1] = (registers[x] / 10) % 10;
+	memory[indexReg + 2] = (registers[x] % 100) % 10;
 }
 
 void Chip8::OP_Fx55(){
+	uint8_t x = get_x(opcode);
 
+	for (uint8_t i = 0; i <= x; i++) {
+		memory[indexReg + i] = registers[i];
+	}
 }
 
 void Chip8::OP_Fx65(){
+	uint8_t x = get_x(opcode);
 
+	for (uint8_t i = 0; i <= x; i++) {
+		registers[i] = memory[indexReg + i];
+	}
 }
-
 
 uint16_t Chip8::get_nnn(uint16_t opcode) {
 	return (opcode & 0x0FFFu);
 }
 
 uint8_t Chip8::get_msb_n(uint16_t opcode) {
-	return (uint8_t)((opcode & 0xF000u) >> 12);
+	return (uint8_t)((opcode & 0xF000) >> 12);
 }
 
 uint8_t Chip8::get_lsb_n(uint16_t opcode) {
-	return (uint8_t)((opcode & 0x000Fu));
+	return (uint8_t)((opcode & 0x000F));
 }
 
 uint8_t Chip8::get_x(uint16_t opcode) {
-	return (uint8_t)((opcode & 0x0F00u) >> 8);
+	return (uint8_t)((opcode & 0x0F00) >> 8);
 }
 
 uint8_t Chip8::get_y(uint16_t opcode) {
-	return (uint8_t)((opcode & 0x00F0u) >> 4);
+	return (uint8_t)((opcode & 0x00F0) >> 4);
 }
 
 uint8_t Chip8::get_kk(uint16_t opcode) {
-	return (uint8_t)(opcode & 0x00FFu);
+	return (uint8_t)(opcode & 0x00FF);
 }
 
 
 void Chip8::printDisplay() {
-	for (int i = 0; i < 66; i++)
-		std::cout << (char)254u;
-	
-	std::cout << std::endl;
 	for (int row = 0; row < 32; row++) {
-		std::cout << (char)254u;
 		for (int col = 0; col < 64; col++) {
 			uint16_t pos = (row * 64) + col;
 			uint32_t pixel = display[pos];
@@ -651,26 +662,19 @@ void Chip8::printDisplay() {
 			std::cout << out;
 
 		}
-		std::cout << (char)254u << std::endl;
+		std::cout << std::endl;
 	}
-
-	for (int i = 0; i < 66; i++)
-		std::cout << (char)254u;
 	std::cout << std::endl;
-
 
 	drawFlag = false;
 }
 
-
-
 void Chip8::pollKeys() {
-	//if (GetAsyncKeyState(0x31) >> 8) {
-	//	std::cout << "key 1 pressed" << std::endl;
-	//} else if (GetAsyncKeyState(0x31)) {
-	//	std::cout << "key 1 up" << std::endl;
-	//}
-	//uint16_t key = GetAsyncKeyState(0x31);
-	std::cout << (GetAsyncKeyState(0x31)) << std::endl;
+	for (int i = 0; i < KEYPAD_SIZE; i++) {
+		keypad[i] = keyPressed(keycodes[i]);
+	}
 }
 
+uint8_t Chip8::keyPressed(uint8_t keycode) {
+	return (((uint16_t)GetAsyncKeyState(keycode)) >> 15) ? 1 : 0;
+}

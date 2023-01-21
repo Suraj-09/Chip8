@@ -5,18 +5,26 @@
 #include <cstdint>
 #include <fstream>
 
+const unsigned int MEMORY_SIZE = 4096;
+const unsigned int NUM_REGISTER = 16;
+const unsigned int STACK_LEVELS = 16;
+const unsigned int DISPLAY_WIDTH = 64;
+const unsigned int DISPLAY_HEIGHT = 32;
+const unsigned int DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT;
+const unsigned int KEYPAD_SIZE = 16;
+
 class Chip8 {
 private:
-	uint8_t memory[4096];
-	uint8_t registers[16];
+	uint8_t memory[MEMORY_SIZE];
+	uint8_t registers[NUM_REGISTER];
 	uint16_t indexReg;
 	uint16_t programCounter;
-	uint16_t stack[16];
+	uint16_t stack[STACK_LEVELS];
 	uint8_t stackPointer;
 	uint8_t delayTimer;
 	uint8_t soundTimer;
-	uint32_t display[64*32];
-	uint8_t keypad[16];
+	uint32_t display[DISPLAY_SIZE];
+	uint8_t keypad[KEYPAD_SIZE];
 	uint16_t opcode;
 
 	uint16_t get_nnn(uint16_t opcode);
@@ -25,8 +33,8 @@ private:
 	uint8_t get_x(uint16_t opcode);
 	uint8_t get_y(uint16_t opcode);
 	uint8_t get_kk(uint16_t opcode);
+	uint8_t keyPressed(uint8_t keycode);
 
-	
 	void OP_00E0();
 	void OP_00EE();
 	void OP_1nnn();
