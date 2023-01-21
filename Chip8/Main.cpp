@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 		chip8.Cycle();
 		if (chip8.drawFlag)
 			chip8.printDisplay();
+
+		chip8.pollKeys();
 	}
 
 	return 0;

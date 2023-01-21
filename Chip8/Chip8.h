@@ -26,6 +26,7 @@ private:
 	uint8_t get_y(uint16_t opcode);
 	uint8_t get_kk(uint16_t opcode);
 
+	
 	void OP_00E0();
 	void OP_00EE();
 	void OP_1nnn();
@@ -66,4 +67,5 @@ public:
 	void Cycle();
 	bool drawFlag;
 	void printDisplay();
+	void pollKeys();
 };
