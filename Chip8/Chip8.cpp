@@ -261,7 +261,7 @@ void Chip8::Cycle() {
 		std::cout << "unrecognized opcode";
 	}
 
-	Sleep(16);
+	Sleep(1);
 }
 
 // Clear the display.

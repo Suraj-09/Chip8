@@ -12,6 +12,7 @@ private:
 public:
 	Display_Helper(int windowWidth, int windowHeight);
 	void Display_Update(uint32_t display[]);
+	bool keypadInputs(uint8_t keypad[]);
 	~Display_Helper();
 
 };
