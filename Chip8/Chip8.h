@@ -23,8 +23,6 @@ private:
 	uint8_t stackPointer;
 	uint8_t delayTimer;
 	uint8_t soundTimer;
-	uint32_t display[DISPLAY_SIZE];
-	uint8_t keypad[KEYPAD_SIZE];
 	uint16_t opcode;
 
 	uint16_t get_nnn(uint16_t opcode);
@@ -74,6 +72,8 @@ public:
 	void LoadROM(char const* filename);
 	void Cycle();
 	bool drawFlag;
+	uint32_t display[DISPLAY_SIZE];
+	uint8_t keypad[KEYPAD_SIZE];
 	void printDisplay();
 	void pollKeys();
 };
