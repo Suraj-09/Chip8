@@ -75,6 +75,7 @@ Chip8::Chip8() {
 
 	// Clear screen once
 	drawFlag = true;
+	romLoaded = false;
 }
 
 
@@ -99,8 +100,11 @@ void Chip8::LoadROM(char const* filename) {
 
 		// Free the buffer
 		delete[] buffer;
+
+		romLoaded = true;
 	} else {
 		std::cout << "error" << std::endl;
+
 	}
 }
 
