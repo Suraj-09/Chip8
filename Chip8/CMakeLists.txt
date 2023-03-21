@@ -12,7 +12,7 @@ add_executable (Chip8 "Chip8.cpp" "Chip8.h" "Main.cpp" "Display_Helper.h" "Displ
 target_link_libraries(Chip8 SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Chip8 PROPERTY CXX_STANDARD 20)
+  set_property(TARGET Chip8 PROPERTY CXX_STANDARD 17)
 endif()
 
 # TODO: Add tests and install targets if needed.
