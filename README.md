@@ -10,8 +10,8 @@ This is a personal project that implements a Chip-8 interpreter in C++. The Chip
 
 
 ## Keyboard Mapping
-1 2 3 C &nbsp;&rarr;&nbsp; 1 2 3 4
-4 5 6 D &nbsp;&rarr;&nbsp; Q W E R
-7 8 9 E &nbsp;&rarr;&nbsp; A S D F
-A 0 B F &nbsp;&rarr;&nbsp; Z X C V
+1 2 3 C &nbsp;&rarr;&nbsp; 1 2 3 4<br>
+4 5 6 D &nbsp;&rarr;&nbsp; Q W E R<br>
+7 8 9 E &nbsp;&rarr;&nbsp; A S D F<br>
+A 0 B F &nbsp;&rarr;&nbsp; Z X C V<br>
 
